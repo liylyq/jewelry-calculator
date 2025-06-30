@@ -1,0 +1,871 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>珠宝定制报价计算器</title>
+    <script src="https://unpkg.com/xlsx/dist/xlsx.full.min.js"></script>
+    <script src="https://html2canvas.hertzen.com/dist/html2canvas.min.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', 'Microsoft YaHei', sans-serif;
+        }
+        
+        :root {
+            --primary: #1a3a5f;
+            --secondary: #d4af37;
+            --accent: #3a86ff;
+            --light: #f8f9fa;
+            --dark: #212529;
+            --success: #28a745;
+            --warning: #ffc107;
+            --danger: #dc3545;
+        }
+        
+        body {
+            background: linear-gradient(135deg, #f0f5ff 0%, #e6f0ff 100%);
+            color: #333;
+            min-height: 100vh;
+            padding: 20px;
+            line-height: 1.6;
+        }
+        
+        .container {
+            max-width: 1000px;
+            margin: 0 auto;
+        }
+        
+        header {
+            text-align: center;
+            padding: 30px 0;
+            margin-bottom: 30px;
+        }
+        
+        .logo {
+            width: 80px;
+            height: 80px;
+            margin: 0 auto 15px;
+            background: linear-gradient(135deg, var(--primary), #2a5298);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 36px;
+            color: white;
+            box-shadow: 0 6px 15px rgba(0,0,0,0.1);
+        }
+        
+        h1 {
+            font-size: 32px;
+            color: var(--primary);
+            margin-bottom: 10px;
+            font-weight: 600;
+        }
+        
+        .subtitle {
+            color: #5a7ab5;
+            font-size: 18px;
+            margin-bottom: 20px;
+        }
+        
+        .calculator-container {
+            background: white;
+            border-radius: 16px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.08);
+            padding: 30px;
+            margin-bottom: 30px;
+        }
+        
+        .input-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 25px;
+            margin-bottom: 30px;
+        }
+        
+        .input-group {
+            margin-bottom: 20px;
+        }
+        
+        label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 600;
+            color: var(--primary);
+            font-size: 15px;
+        }
+        
+        input, select {
+            width: 100%;
+            padding: 14px 16px;
+            border: 1px solid #d1d8e0;
+            border-radius: 10px;
+            font-size: 16px;
+            background-color: #f8fafc;
+            transition: all 0.3s;
+        }
+        
+        input:focus, select:focus {
+            outline: none;
+            border-color: var(--accent);
+            box-shadow: 0 0 0 3px rgba(58, 134, 255, 0.2);
+        }
+        
+        .result-box {
+            padding: 25px;
+            background: #f8fafc;
+            border-radius: 12px;
+            margin-top: 20px;
+            box-shadow: inset 0 2px 5px rgba(0,0,0,0.03);
+        }
+        
+        .result-row {
+            display: flex;
+            justify-content: space-between;
+            padding: 14px 0;
+            border-bottom: 1px solid #e2e8f0;
+        }
+        
+        .result-row:last-child {
+            border-bottom: none;
+        }
+        
+        .result-label {
+            font-weight: 600;
+            color: var(--primary);
+        }
+        
+        .result-value {
+            font-weight: 600;
+            color: var(--accent);
+        }
+        
+        .total-row {
+            font-size: 22px;
+            padding-top: 18px;
+            color: var(--primary);
+        }
+        
+        .btn-group {
+            display: flex;
+            gap: 15px;
+            margin-top: 30px;
+            flex-wrap: wrap;
+        }
+        
+        .btn {
+            flex: 1;
+            padding: 16px 20px;
+            font-size: 17px;
+            font-weight: 600;
+            border: none;
+            border-radius: 12px;
+            cursor: pointer;
+            transition: all 0.3s;
+            min-width: 180px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+        }
+        
+        .btn-calculate {
+            background: linear-gradient(to right, var(--primary), #2a5298);
+            color: white;
+            box-shadow: 0 4px 12px rgba(42, 82, 152, 0.2);
+        }
+        
+        .btn-export {
+            background: linear-gradient(to right, var(--success), #2ecc71);
+            color: white;
+            box-shadow: 0 4px 12px rgba(46, 204, 113, 0.2);
+        }
+        
+        .btn-image {
+            background: linear-gradient(to right, var(--accent), #5d9cec);
+            color: white;
+            box-shadow: 0 4px 12px rgba(93, 156, 236, 0.2);
+        }
+        
+        .btn:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 8px 20px rgba(0,0,0,0.15);
+        }
+        
+        .btn:active {
+            transform: translateY(1px);
+        }
+        
+        .btn svg {
+            width: 20px;
+            height: 20px;
+        }
+        
+        .price-table-container {
+            background: white;
+            border-radius: 16px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.08);
+            padding: 30px;
+            margin-bottom: 30px;
+            overflow-x: auto;
+        }
+        
+        .price-table-title {
+            font-size: 24px;
+            color: var(--primary);
+            margin-bottom: 25px;
+            text-align: center;
+            font-weight: 600;
+        }
+        
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            min-width: 600px;
+        }
+        
+        th, td {
+            padding: 16px;
+            text-align: center;
+        }
+        
+        thead tr {
+            background: linear-gradient(to bottom, var(--primary), #2a5298);
+            color: white;
+        }
+        
+        tbody tr:nth-child(even) {
+            background-color: #f8fafc;
+        }
+        
+        tbody tr:hover {
+            background-color: #f0f7ff;
+        }
+        
+        th:first-child {
+            border-radius: 12px 0 0 0;
+        }
+        
+        th:last-child {
+            border-radius: 0 12px 0 0;
+        }
+        
+        tfoot td {
+            font-weight: 600;
+            background-color: #f0f7ff;
+            color: var(--primary);
+            padding: 18px;
+        }
+        
+        .price-input {
+            width: 100px;
+            padding: 8px 12px;
+            border: 1px solid #d1d8e0;
+            border-radius: 8px;
+            text-align: center;
+            font-size: 15px;
+        }
+        
+        .update-btn {
+            background: var(--accent);
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: 600;
+            margin-top: 15px;
+            transition: all 0.3s;
+        }
+        
+        .update-btn:hover {
+            background: #2a75e6;
+            transform: translateY(-2px);
+        }
+        
+        .note {
+            text-align: center;
+            color: #6c757d;
+            font-size: 15px;
+            margin-top: 25px;
+            padding: 0 20px;
+        }
+        
+        .footer {
+            text-align: center;
+            padding: 30px 0;
+            color: #6c757d;
+            font-size: 14px;
+        }
+        
+        /* 戒托价格卡片 */
+        .price-card {
+            display: none;
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            z-index: 1000;
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 15px 50px rgba(0,0,0,0.2);
+            padding: 40px;
+            text-align: center;
+            width: 420px;
+            border: 1px solid #e2e8f0;
+        }
+        
+        .card-header {
+            margin-bottom: 30px;
+        }
+        
+        .card-title {
+            font-size: 28px;
+            color: var(--primary);
+            font-weight: 700;
+            margin-bottom: 10px;
+        }
+        
+        .card-subtitle {
+            font-size: 16px;
+            color: #6c757d;
+        }
+        
+        .card-content {
+            margin: 30px 0;
+        }
+        
+        .weight-info {
+            font-size: 48px;
+            font-weight: 700;
+            color: var(--primary);
+            margin: 20px 0;
+        }
+        
+        .card-divider {
+            height: 2px;
+            background: linear-gradient(to right, transparent, #e2e8f0, transparent);
+            margin: 25px 0;
+        }
+        
+        .total-info {
+            font-size: 54px;
+            font-weight: 800;
+            color: var(--accent);
+            margin: 20px 0;
+        }
+        
+        .card-footer {
+            color: #6c757d;
+            font-size: 14px;
+            margin-top: 30px;
+            line-height: 1.6;
+        }
+        
+        .overlay {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.6);
+            z-index: 999;
+        }
+        
+        .close-btn {
+            position: absolute;
+            top: 20px;
+            right: 25px;
+            font-size: 28px;
+            color: #6c757d;
+            cursor: pointer;
+            width: 40px;
+            height: 40px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 50%;
+            transition: all 0.3s;
+        }
+        
+        .close-btn:hover {
+            background: #f8f9fa;
+            color: var(--danger);
+        }
+        
+        @media (max-width: 768px) {
+            .btn {
+                flex: 100%;
+            }
+            
+            h1 {
+                font-size: 26px;
+            }
+            
+            .subtitle {
+                font-size: 16px;
+            }
+            
+            .input-grid {
+                grid-template-columns: 1fr;
+            }
+            
+            .price-card {
+                width: 90%;
+                max-width: 350px;
+                padding: 30px 20px;
+            }
+            
+            .weight-info {
+                font-size: 40px;
+            }
+            
+            .total-info {
+                font-size: 46px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <div class="logo">💎</div>
+            <h1>珠宝定制报价计算器</h1>
+            <div class="subtitle">专业精准 · 自动计算 · 一键导出戒托总价</div>
+        </header>
+        
+        <div class="calculator-container">
+            <div class="input-grid">
+                <div>
+                    <div class="input-group">
+                        <label for="goldPrice">当日金价（元/克）</label>
+                        <input type="number" id="goldPrice" value="580">
+                    </div>
+                    
+                    <div class="input-group">
+                        <label for="weight">贵金属克重（克）</label>
+                        <input type="number" id="weight" value="6.5">
+                    </div>
+                    
+                    <div class="input-group">
+                        <label for="subStoneType">副石形状</label>
+                        <select id="subStoneType">
+                            <option value="round">圆形</option>
+                            <option value="fancy">异形</option>
+                        </select>
+                    </div>
+                </div>
+                
+                <div>
+                    <div class="input-group">
+                        <label for="subStoneCarat">副石克拉重量</label>
+                        <input type="number" id="subStoneCarat" step="0.01" value="1.2">
+                    </div>
+                    
+                    <div class="input-group">
+                        <label for="designType">是否有设计版</label>
+                        <select id="designType">
+                            <option value="with">已有版</option>
+                            <option value="without">无版需设计</option>
+                        </select>
+                    </div>
+                    
+                    <div class="input-group">
+                        <label for="expressFee">快递物流包装费（元）</label>
+                        <input type="number" id="expressFee" value="70" readonly>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="result-box">
+                <div class="result-row">
+                    <div class="result-label">贵金属价值：</div>
+                    <div class="result-value" id="goldValue">¥ 0.00</div>
+                </div>
+                
+                <div class="result-row">
+                    <div class="result-label">副石价值：</div>
+                    <div class="result-value" id="subStoneValue">¥ 0.00</div>
+                </div>
+                
+                <div class="result-row">
+                    <div class="result-label">设计费：</div>
+                    <div class="result-value" id="designFee">¥ 0.00</div>
+                </div>
+                
+                <div class="result-row">
+                    <div class="result-label">快递物流包装费：</div>
+                    <div class="result-value">¥ 70.00</div>
+                </div>
+                
+                <div class="result-row total-row">
+                    <div class="result-label">总计金额：</div>
+                    <div class="result-value" id="totalPrice">¥ 0.00</div>
+                </div>
+            </div>
+            
+            <div class="btn-group">
+                <button id="calculateBtn" class="btn btn-calculate">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
+                        <path d="M2 2a2 2 0 0 1 2-2h8a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V2zm2 .5v2a.5.5 0 0 0 .5.5h7a.5.5 0 0 0 .5-.5v-2a.5.5 0 0 0-.5-.5h-7a.5.5 0 0 0-.5.5zm0 4v1a.5.5 0 0 0 .5.5h1a.5.5 0 0 0 .5-.5v-1a.5.5 0 0 0-.5-.5h-1a.5.5 0 0 0-.5.5zM4.5 9a.5.5 0 0 0-.5.5v1a.5.5 0 0 0 .5.5h1a.5.5 0 0 0 .5-.5v-1a.5.5 0 0 0-.5-.5h-1zM4 12.5v1a.5.5 0 0 0 .5.5h1a.5.5 0 0 0 .5-.5v-1a.5.5 0 0 0-.5-.5h-1a.5.5 0 0 0-.5.5zM7.5 6h2a.5.5 0 0 1 .5.5v1a.5.5 0 0 1-.5.5h-2a.5.5 0 0 1-.5-.5v-1a.5.5 0 0 1 .5-.5zm0 3h2a.5.5 0 0 1 .5.5v1a.5.5 0 0 1-.5.5h-2a.5.5 0 0 1-.5-.5v-1a.5.5 0 0 1 .5-.5zm0 3h2a.5.5 0 0 1 .5.5v1a.5.5 0 0 1-.5.5h-2a.5.5 0 0 1-.5-.5v-1a.5.5 0 0 1 .5-.5zm-3-6h-1v3h1v-3z"/>
+                    </svg>
+                    计算报价
+                </button>
+                
+                <button id="exportBtn" class="btn btn-export">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
+                        <path d="M5.884 6.68a.5.5 0 1 0-.768.64L7.349 10l-2.233 2.68a.5.5 0 0 0 .768.64L8 10.781l2.116 2.54a.5.5 0 0 0 .768-.641L8.651 10l2.233-2.68a.5.5 0 0 0-.768-.64L8 9.219l-2.116-2.54z"/>
+                        <path d="M14 14V4.5L9.5 0H4a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h8a2 2 0 0 0 2-2zM9.5 3A1.5 1.5 0 0 0 11 4.5h2V14a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V2a1 1 0 0 1 1-1h5.5v2z"/>
+                    </svg>
+                    导出Excel报价单
+                </button>
+                
+                <button id="imageExportBtn" class="btn btn-image">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
+                        <path d="M4.502 9a1.5 1.5 0 1 0 0-3 1.5 1.5 0 0 0 0 3z"/>
+                        <path d="M14.002 13a2 2 0 0 1-2 2h-10a2 2 0 0 1-2-2V5A2 2 0 0 1 2 3a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2v8a2 2 0 0 1-1.998 2zM14 2H4a1 1 0 0 0-1 1h9.002a2 2 0 0 1 2 2v7A1 1 0 0 0 15 11V3a1 1 0 0 0-1-1zM2.002 4a1 1 0 0 0-1 1v8l2.646-2.354a.5.5 0 0 1 .63-.062l2.66 1.773 3.71-3.71a.5.5 0 0 1 .577-.094l1.777 1.947V5a1 1 0 0 0-1-1h-10z"/>
+                    </svg>
+                    导出戒托总价图
+                </button>
+            </div>
+        </div>
+        
+        <!-- 戒托价格卡片 - 用于生成图片 -->
+        <div id="priceCard" class="price-card">
+            <div class="close-btn">×</div>
+            <div class="card-header">
+                <div class="card-title">戒托总价</div>
+                <div class="card-subtitle">定制日期: <span id="card-date"></span></div>
+            </div>
+            <div class="card-content">
+                <div class="card-label">用金克数</div>
+                <div class="weight-info" id="card-weight">0.00 g</div>
+                
+                <div class="card-divider"></div>
+                
+                <div class="card-label">戒托总价</div>
+                <div class="total-info" id="card-total">¥ 0.00</div>
+            </div>
+            <div class="card-footer">
+                <p>根据当日金价和实际用金克数计算</p>
+                <p>深圳水贝珠宝中心权威认证</p>
+            </div>
+        </div>
+        
+        <!-- 覆盖层 -->
+        <div id="overlay" class="overlay"></div>
+        
+        <div class="price-table-container">
+            <h2 class="price-table-title">副石价格计算标准</h2>
+            
+            <table id="priceTable">
+                <thead>
+                    <tr>
+                        <th>形状</th>
+                        <th>克拉范围</th>
+                        <th>单价（元/克拉）</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td rowspan="5">圆形</td>
+                        <td>小于1克拉</td>
+                        <td><input type="number" class="price-input" id="round-1" value="1100"></td>
+                    </tr>
+                    <tr>
+                        <td>1-2克拉</td>
+                        <td><input type="number" class="price-input" id="round-2" value="1000"></td>
+                    </tr>
+                    <tr>
+                        <td>2-3克拉</td>
+                        <td><input type="number" class="price-input" id="round-3" value="900"></td>
+                    </tr>
+                    <tr>
+                        <td>3-4克拉</td>
+                        <td><input type="number" class="price-input" id="round-4" value="800"></td>
+                    </tr>
+                    <tr>
+                        <td>4-5克拉</td>
+                        <td><input type="number" class="price-input" id="round-5" value="800"></td>
+                    </tr>
+                    
+                    <tr>
+                        <td rowspan="4">异形</td>
+                        <td>小于1克拉</td>
+                        <td><input type="number" class="price-input" id="fancy-1" value="1300"></td>
+                    </tr>
+                    <tr>
+                        <td>1-2克拉</td>
+                        <td><input type="number" class="price-input" id="fancy-2" value="1200"></td>
+                    </tr>
+                    <tr>
+                        <td>2-3克拉</td>
+                        <td><input type="number" class="price-input" id="fancy-3" value="1100"></td>
+                    </tr>
+                    <tr>
+                        <td>3-4克拉</td>
+                        <td><input type="number" class="price-input" id="fancy-4" value="1000"></td>
+                    </tr>
+                </tbody>
+                <tfoot>
+                    <tr>
+                        <td colspan="3">
+                            <div>设计费标准：圆形免费，异形+50元。无版需设计+180元</div>
+                            <button class="update-btn" id="updatePricesBtn">更新副石单价</button>
+                        </td>
+                    </tr>
+                </tfoot>
+            </table>
+        </div>
+        
+        <div class="note">
+            <p>此报价包含贵金属价值、副石价值、设计费和固定包装物流费</p>
+            <p>最终价格可能因实际设计和工艺复杂程度有所调整</p>
+        </div>
+        
+        <div class="footer">
+            <p>© 2023 珠宝定制专家 | 专业报价系统</p>
+        </div>
+    </div>
+    
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // 获取DOM元素
+            const priceCard = document.getElementById('priceCard');
+            const overlay = document.getElementById('overlay');
+            const closeBtn = document.querySelector('.close-btn');
+            const goldPriceInput = document.getElementById('goldPrice');
+            const weightInput = document.getElementById('weight');
+            const updatePricesBtn = document.getElementById('updatePricesBtn');
+            
+            // 存储副石价格
+            let subStonePrices = {
+                round: {
+                    "<1": 1100,
+                    "1-2": 1000,
+                    "2-3": 900,
+                    "3-4": 800,
+                    "4-5": 800
+                },
+                fancy: {
+                    "<1": 1300,
+                    "1-2": 1200,
+                    "2-3": 1100,
+                    "3-4": 1000
+                }
+            };
+            
+            // 初始计算
+            calculatePrice();
+            
+            // 计算按钮点击事件
+            document.getElementById('calculateBtn').addEventListener('click', calculatePrice);
+            
+            // 输入变化时自动计算
+            document.querySelectorAll('#goldPrice, #weight, #subStoneCarat, #subStoneType, #designType').forEach(input => {
+                input.addEventListener('change', calculatePrice);
+            });
+            
+            // 导出按钮点击事件
+            document.getElementById('exportBtn').addEventListener('click', exportToExcel);
+            
+            // 导出戒托总价图片按钮
+            document.getElementById('imageExportBtn').addEventListener('click', generatePriceImage);
+            
+            // 关闭戒托价格卡片
+            closeBtn.addEventListener('click', closePriceCard);
+            
+            // 点击覆盖层关闭卡片
+            overlay.addEventListener('click', closePriceCard);
+            
+            // 更新副石单价按钮
+            updatePricesBtn.addEventListener('click', updateSubStonePrices);
+            
+            // 核心计算函数
+            function calculatePrice() {
+                // 获取输入值
+                const goldPrice = parseFloat(goldPriceInput.value) || 0;
+                const weight = parseFloat(weightInput.value) || 0;
+                const subStoneCarat = parseFloat(document.getElementById('subStoneCarat').value) || 0;
+                const subStoneType = document.getElementById('subStoneType').value;
+                const designType = document.getElementById('designType').value;
+                const expressFee = 70; // 固定物流包装费
+                
+                // 计算贵金属价值
+                const goldValue = goldPrice * weight;
+                
+                // 计算副石价值
+                let subStoneRate;
+                if (subStoneType === 'round') { // 圆形副石
+                    if (subStoneCarat < 1) {
+                        subStoneRate = subStonePrices.round["<1"];
+                    } else if (subStoneCarat < 2) {
+                        subStoneRate = subStonePrices.round["1-2"];
+                    } else if (subStoneCarat < 3) {
+                        subStoneRate = subStonePrices.round["2-3"];
+                    } else if (subStoneCarat < 4) {
+                        subStoneRate = subStonePrices.round["3-4"];
+                    } else {
+                        subStoneRate = subStonePrices.round["4-5"];
+                    }
+                } else { // 异形副石
+                    if (subStoneCarat < 1) {
+                        subStoneRate = subStonePrices.fancy["<1"];
+                    } else if (subStoneCarat < 2) {
+                        subStoneRate = subStonePrices.fancy["1-2"];
+                    } else if (subStoneCarat < 3) {
+                        subStoneRate = subStonePrices.fancy["2-3"];
+                    } else {
+                        subStoneRate = subStonePrices.fancy["3-4"];
+                    }
+                }
+                
+                const subStoneValue = subStoneCarat * subStoneRate;
+                
+                // 计算设计费
+                let designFee = 0;
+                if (designType === 'without') {
+                    designFee += 180; // 无版需设计
+                }
+                
+                if (subStoneType === 'fancy') {
+                    designFee += 50; // 异形石额外设计费
+                }
+                
+                // 计算总价
+                const totalPrice = goldValue + subStoneValue + designFee + expressFee;
+                
+                // 更新结果显示
+                document.getElementById('goldValue').textContent = formatCurrency(goldValue);
+                document.getElementById('subStoneValue').textContent = formatCurrency(subStoneValue);
+                document.getElementById('designFee').textContent = formatCurrency(designFee);
+                document.getElementById('totalPrice').textContent = formatCurrency(totalPrice);
+            }
+            
+            // 更新副石单价
+            function updateSubStonePrices() {
+                // 更新圆形副石价格
+                subStonePrices.round["<1"] = parseFloat(document.getElementById('round-1').value) || 1100;
+                subStonePrices.round["1-2"] = parseFloat(document.getElementById('round-2').value) || 1000;
+                subStonePrices.round["2-3"] = parseFloat(document.getElementById('round-3').value) || 900;
+                subStonePrices.round["3-4"] = parseFloat(document.getElementById('round-4').value) || 800;
+                subStonePrices.round["4-5"] = parseFloat(document.getElementById('round-5').value) || 800;
+                
+                // 更新异形副石价格
+                subStonePrices.fancy["<1"] = parseFloat(document.getElementById('fancy-1').value) || 1300;
+                subStonePrices.fancy["1-2"] = parseFloat(document.getElementById('fancy-2').value) || 1200;
+                subStonePrices.fancy["2-3"] = parseFloat(document.getElementById('fancy-3').value) || 1100;
+                subStonePrices.fancy["3-4"] = parseFloat(document.getElementById('fancy-4').value) || 1000;
+                
+                // 重新计算价格
+                calculatePrice();
+                
+                // 显示成功提示
+                alert('副石单价已更新！');
+            }
+            
+            // 格式化货币显示
+            function formatCurrency(value) {
+                return '¥ ' + value.toFixed(2);
+            }
+            
+            // 导出Excel功能
+            function exportToExcel() {
+                // 创建工作簿
+                const wb = XLSX.utils.book_new();
+                
+                // 创建报价单数据
+                const data = [
+                    ['项目', '价值(元)'],
+                    ['贵金属价值', document.getElementById('goldValue').textContent],
+                    ['副石价值', document.getElementById('subStoneValue').textContent],
+                    ['设计费', document.getElementById('designFee').textContent],
+                    ['快递物流包装费', '¥ 70.00'],
+                    ['总计', document.getElementById('totalPrice').textContent]
+                ];
+                
+                // 添加第二张表：参数表
+                const params = [
+                    ['报价参数', ''],
+                    ['当日金价(元/克)', goldPriceInput.value],
+                    ['贵金属克重(克)', weightInput.value],
+                    ['副石形状', document.getElementById('subStoneType').options[document.getElementById('subStoneType').selectedIndex].text],
+                    ['副石克拉重量', document.getElementById('subStoneCarat').value],
+                    ['设计版情况', document.getElementById('designType').options[document.getElementById('designType').selectedIndex].text],
+                    [''],
+                    ['副石价格表', ''],
+                    ['形状', '克拉范围', '单价(元/克拉)'],
+                    ['圆形', '小于1克拉', subStonePrices.round["<1"]],
+                    ['圆形', '1-2克拉', subStonePrices.round["1-2"]],
+                    ['圆形', '2-3克拉', subStonePrices.round["2-3"]],
+                    ['圆形', '3-4克拉', subStonePrices.round["3-4"]],
+                    ['圆形', '4-5克拉', subStonePrices.round["4-5"]],
+                    ['异形', '小于1克拉', subStonePrices.fancy["<1"]],
+                    ['异形', '1-2克拉', subStonePrices.fancy["1-2"]],
+                    ['异形', '2-3克拉', subStonePrices.fancy["2-3"]],
+                    ['异形', '3-4克拉', subStonePrices.fancy["3-4"]]
+                ];
+                
+                // 创建工作表
+                const ws = XLSX.utils.aoa_to_sheet(data);
+                const ws2 = XLSX.utils.aoa_to_sheet(params);
+                
+                // 添加工作表到工作簿
+                XLSX.utils.book_append_sheet(wb, ws, '报价单');
+                XLSX.utils.book_append_sheet(wb, ws2, '参数');
+                
+                // 导出Excel
+                XLSX.writeFile(wb, '珠宝定制报价单_' + new Date().toISOString().slice(0, 10) + '.xlsx');
+            }
+            
+            // 生成戒托总价图片
+            function generatePriceImage() {
+                const goldPrice = parseFloat(goldPriceInput.value) || 0;
+                const weight = parseFloat(weightInput.value) || 0;
+                const goldValue = goldPrice * weight;
+                
+                // 更新卡片内容
+                document.getElementById('card-weight').textContent = weight.toFixed(2) + ' g';
+                document.getElementById('card-total').textContent = '¥ ' + goldValue.toFixed(2);
+                
+                // 设置当前日期
+                const now = new Date();
+                document.getElementById('card-date').textContent = 
+                    now.getFullYear() + '年' + 
+                    (now.getMonth() + 1) + '月' + 
+                    now.getDate() + '日';
+                
+                // 显示卡片
+                priceCard.style.display = 'block';
+                overlay.style.display = 'block';
+                
+                // 使用html2canvas生成图片
+                setTimeout(() => {
+                    html2canvas(priceCard).then(canvas => {
+                        // 创建下载链接
+                        const link = document.createElement('a');
+                        link.download = '戒托总价_' + new Date().toISOString().slice(0, 10) + '.png';
+                        link.href = canvas.toDataURL('image/png');
+                        document.body.appendChild(link);
+                        link.click();
+                        document.body.removeChild(link);
+                        
+                        // 关闭卡片
+                        closePriceCard();
+                    });
+                }, 500);
+            }
+            
+            // 关闭戒托价格卡片
+            function closePriceCard() {
+                priceCard.style.display = 'none';
+                overlay.style.display = 'none';
+            }
+        });
+    </script>
+</body>
+</html>
